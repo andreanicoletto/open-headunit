@@ -53,9 +53,11 @@
         android:name="android.hardware.bluetooth"
         android:required="false" />
 
+    <!-- Vito fork: same name the broadcast is sent with (HeadUnit.packageName = applicationId), and
+         normal so a separate app (our launcher) can hold it with uses-permission. -->
     <permission
-        android:name="com.andrerinas.openheadunit.permission.NAVIGATION_UPDATE"
-        android:protectionLevel="signature" />
+        android:name="${applicationId}.permission.NAVIGATION_UPDATE"
+        android:protectionLevel="normal" />
 
     <uses-permission android:name="android.permission.TURN_SCREEN_ON" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />

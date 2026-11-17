@@ -62,7 +62,7 @@ class ProjectionActivityRequest: Intent(action) {
  * so any app can receive by registering for [action] with RECEIVER_EXPORTED.
  *
  * Other apps: registerReceiver(receiver, IntentFilter(NavigationUpdateIntent.action), RECEIVER_EXPORTED)
- * No special permission required.
+ * and declare <uses-permission android:name="[NavigationUpdateIntent.BROADCAST_PERMISSION]"/> (normal level).
  *
  * @param nextEventType **Deprecated (legacy):** wire values for AA `NextTurnDetail.NextEvent` (see [EXTRA_NEXT_EVENT_TYPE]).
  *   Mapped from instrument-cluster `NavigationManeuver` when the old message is absent; scheduled for removal — migrate
@@ -158,7 +158,8 @@ class NavigationUpdateIntent(
         const val EXTRA_ESTIMATED_ARRIVAL = "estimated_arrival"
 
         /**
-         * Signature-level permission required to receive or send [NavigationUpdateIntent] broadcasts.
+         * Normal-level permission (declared in the app manifest as ${applicationId}.permission...) required to
+         * receive [NavigationUpdateIntent] broadcasts.
          * Senders must call sendBroadcast(intent, BROADCAST_PERMISSION).
          * Receivers must request this permission using <uses-permission> and should enforce it in their manifest declaration.
          */
