@@ -65,6 +65,7 @@ internal class AapMessageHandlerType(
         // on the reader before another session can be dispatched.
         // Return the credit without decoding or queuing the rejected payload.
         transport.sendMediaAck(channel)
+        if (channel == Channel.ID_CLU_VID) transport.cluster?.requestKeyframe("reassembly dropped a frame")
     }
 
     @Throws(AapMessageHandler.HandleException::class)
