@@ -267,6 +267,20 @@
             android:windowSoftInputMode="adjustResize"
             android:theme="@style/AppTheme" />
 
+        <!-- Vito fork: full-screen test view of the cluster stream, its own launcher entry. -->
+        <activity
+            android:name=".aap.ClusterActivity"
+            android:exported="true"
+            android:label="Cluster"
+            android:launchMode="singleTask"
+            android:taskAffinity="${applicationId}.cluster"
+            android:theme="@android:style/Theme.Black.NoTitleBar.Fullscreen">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
         <service
             android:name=".aap.AapService"
             android:exported="false"

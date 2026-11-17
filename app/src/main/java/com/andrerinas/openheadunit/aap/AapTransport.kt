@@ -1,6 +1,7 @@
 package com.andrerinas.openheadunit.aap
 
 import android.app.UiModeManager
+import com.andrerinas.openheadunit.App
 import android.content.Context
 import android.content.Context.UI_MODE_SERVICE
 import android.content.Intent
@@ -103,6 +104,9 @@ class AapTransport(
 
     internal val aapAudio: AapAudio
     internal val aapVideo: AapVideo
+    /** Vito fork: the cluster stream, or null when the setting is off (main path unchanged). */
+    internal val cluster: ClusterStream? =
+        if (settings.clusterStream) ClusterStream(this, App.provide(context).clusterDecoder, settings) else null
     private var sendThread: HandlerThread? = null
     private var pollThread: HandlerThread? = null
     private var videoThread: HandlerThread? = null
@@ -865,6 +869,7 @@ class AapTransport(
                 if (videoDecoder.onKeyframeObserved === keyframeObservedCallback) videoDecoder.onKeyframeObserved = null
             }
             cleanupStep("video") { aapVideo.release() }
+            cleanupStep("cluster") { cluster?.release() }
             videoBufferPool.clear()
             videoBacklog.set(0)
             videoShedTotal.set(0)
@@ -931,6 +936,7 @@ class AapTransport(
      */
     internal fun dispatchVideo(message: AapMessage): Boolean {
         val isPayload = aapVideo.isPayload(message)
+        if (isPayload) cluster?.onMainVideoData()
         val acks = AapMessageFraming.completesMediaData(message.type, message.flags.toInt())
         // Capture ownership at receipt. A later MediaStart can replace the channel's session
         // while video is queued; its eventual ACK still belongs to this message's original one.
@@ -1418,6 +1424,8 @@ class AapTransport(
             return handler.sendMessage(msg)
         }
     }
+
+    internal fun videoDecoderHasSurface(): Boolean = videoDecoder.hasSurface()
 
     internal fun gainVideoFocus() {
         context.sendBroadcast(ProjectionActivityRequest())

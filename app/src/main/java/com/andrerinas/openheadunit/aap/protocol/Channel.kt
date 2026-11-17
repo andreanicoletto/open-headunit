@@ -17,6 +17,9 @@ object Channel {
     const val ID_NOTI = 11
     const val ID_PHONE = 12
     const val ID_WIFI = 13
+    // Vito fork: instrument cluster display (video sink + its input service).
+    const val ID_CLU_VID = 14
+    const val ID_CLU_INP = 15
 
     fun name(channel: Int): String {
         when (channel) {
@@ -33,6 +36,8 @@ object Channel {
             ID_NAV -> return "NAVIGATION_DIRECTIONS"
             ID_NOTI -> return "NOTIFICATION"
             ID_PHONE -> return "PHONE_STATUS"
+            ID_CLU_VID -> return "CLUSTER_VIDEO"
+            ID_CLU_INP -> return "CLUSTER_INPUT"
         }
         return "UNK"
     }

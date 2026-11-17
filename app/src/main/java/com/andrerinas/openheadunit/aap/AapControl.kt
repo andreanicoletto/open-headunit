@@ -7,6 +7,7 @@ import com.andrerinas.openheadunit.aap.protocol.Channel
 import com.andrerinas.openheadunit.aap.protocol.messages.DrivingStatusEvent
 import com.andrerinas.openheadunit.aap.protocol.messages.LocationUpdateEvent
 import com.andrerinas.openheadunit.aap.protocol.messages.ServiceDiscoveryResponse
+import com.andrerinas.openheadunit.aap.protocol.messages.VideoFocusEvent
 import com.andrerinas.openheadunit.aap.protocol.proto.Common
 import com.andrerinas.openheadunit.aap.protocol.proto.Control
 import com.andrerinas.openheadunit.aap.protocol.proto.Input
@@ -50,7 +51,27 @@ internal class AapControlMedia(
             Media.MsgType.MEDIA_MESSAGE_STOP_VALUE -> return mediaSinkStopRequest(message.channel)
             Media.MsgType.MEDIA_MESSAGE_VIDEO_FOCUS_REQUEST_VALUE -> {
                 val focusRequest = message.parse(Media.VideoFocusRequestNotification.newBuilder()).build()
-                AppLog.i("RX: Video Focus Request - mode: %s, reason: %s", focusRequest.mode, focusRequest.reason)
+                AppLog.i("RX: Video Focus Request on %s - mode: %s, reason: %s", Channel.name(message.channel), focusRequest.mode, focusRequest.reason)
+
+                if (message.channel == Channel.ID_CLU_VID) {
+                    // About the cluster only; never the user leaving Android Auto.
+                    aapTransport.cluster?.onFocusRequest(focusRequest)
+                    return 0
+                }
+
+                if (focusRequest.mode == Media.VideoFocusMode.VIDEO_FOCUS_PROJECTED) {
+                    // Vito fork (DiAuto issue #42): answer at once when the picture can be shown.
+                    // Left unanswered, Google Maps resuming a route in the gap made the phone
+                    // restart its projection. Without a surface the projection screen sends its
+                    // own gain when the surface arrives, as before.
+                    if (aapTransport.videoDecoderHasSurface()) {
+                        AppLog.i("Video focus PROJECTED granted on request")
+                        aapTransport.send(VideoFocusEvent(gain = true, unsolicited = false))
+                    } else {
+                        AppLog.i("Video focus PROJECTED requested before the surface exists; the projection screen will grant it")
+                    }
+                    return 0
+                }
 
                 if (focusRequest.mode == Media.VideoFocusMode.VIDEO_FOCUS_NATIVE) {
                     AppLog.i("Video Focus NATIVE received. User clicked Exit in Android Auto.")
@@ -104,6 +125,7 @@ internal class AapControlMedia(
         }
 
         aapTransport.setSessionId(channel, request.sessionId)
+        if (channel == Channel.ID_CLU_VID) aapTransport.cluster?.onStart(request.sessionId)
         aapTransport.noteAudioSinkStarted(channel)
         aapAudio.preparePlayback(channel)
         return 0
@@ -127,6 +149,7 @@ internal class AapControlMedia(
             if (aapTransport.sendVideoSetupResponse(msg)) aapTransport.gainVideoFocus()
         } else {
             aapTransport.send(msg)
+            if (channel == Channel.ID_CLU_VID) aapTransport.cluster?.onSetup()
         }
 
         // Pushing AudioFocusNotification
@@ -144,6 +167,8 @@ internal class AapControlMedia(
     }
 
     private fun maxUnackedFor(channel: Int): Int {
+        // Vito fork: a 30 fps map needs little in flight; a short window spares the main picture.
+        if (channel == Channel.ID_CLU_VID) return 4
         if (channel == Channel.ID_VID) {
             // ServiceDiscovery's announcement, not the stored preference, chooses the decoder.
             val codec = aapTransport.aapVideo.announcedCodec
@@ -180,6 +205,8 @@ internal class AapControlMedia(
             // a microphone. A stop here is still the phone saying it wants no more PCM, and until
             // now the recorder kept running and kept sending.
             aapTransport.closeMicSession()
+        } else if (channel == Channel.ID_CLU_VID) {
+            aapTransport.cluster?.onStop()
         } else if (channel == Channel.ID_VID) {
             if (aapTransport.ignoreNextStopRequest) {
                 AppLog.i("Video Sink Stopped -> Ignored (Forced Keyframe Request)")
@@ -503,9 +530,9 @@ internal class AapControlGateway(
         }
         when (message.channel) {
             Channel.ID_CTR -> return serviceControl.execute(message)
-            Channel.ID_INP -> return touchControl.execute(message)
+            Channel.ID_INP, Channel.ID_CLU_INP -> return touchControl.execute(message)
             Channel.ID_SEN -> return sensorControl.execute(message)
-            Channel.ID_VID, Channel.ID_AUD, Channel.ID_AU1, Channel.ID_AU2, Channel.ID_MIC -> return mediaControl.execute(message)
+            Channel.ID_VID, Channel.ID_CLU_VID, Channel.ID_AUD, Channel.ID_AU1, Channel.ID_AU2, Channel.ID_MIC -> return mediaControl.execute(message)
         }
         return 0
     }

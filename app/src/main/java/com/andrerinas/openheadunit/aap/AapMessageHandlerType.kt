@@ -107,6 +107,10 @@ internal class AapMessageHandlerType(
                 return
             }
         }
+        // Vito fork: cluster picture to its own worker; its control traffic falls through to 5.
+        if (message.channel == Channel.ID_CLU_VID && transport.cluster?.dispatch(message) == true) {
+            return
+        }
 
         // 2. Try processing as Audio stream (Speech, System, Media)
         if (message.isAudio && AudioMediaPayload.isMedia(msgType)) {

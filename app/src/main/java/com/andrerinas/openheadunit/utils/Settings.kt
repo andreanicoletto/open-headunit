@@ -1376,6 +1376,13 @@ class Settings(private val context: Context) {
             prefs.edit().putBoolean("use-head-unit-microphone", value).apply()
         }
 
+    /** Vito fork: announce the cluster display and stream it (read when a session starts). */
+    var clusterStream: Boolean
+        get() = prefs.getBoolean("vito-cluster-stream", true)
+        set(value) {
+            prefs.edit().putBoolean("vito-cluster-stream", value).apply()
+        }
+
     var enableAudioSink: Boolean
         get() = prefs.getBoolean("enable-audio-sink", true)
         set(value) { prefs.edit().putBoolean("enable-audio-sink", value).apply() }

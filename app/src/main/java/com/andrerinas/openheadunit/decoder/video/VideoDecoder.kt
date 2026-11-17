@@ -765,6 +765,9 @@ class VideoDecoder(
         }
     }
 
+    /** True while a valid Surface is attached. */
+    fun hasSurface(): Boolean = mSurface?.isValid == true
+
     /**
      * True when [surface] is the surface this decoder currently renders to.
      *
