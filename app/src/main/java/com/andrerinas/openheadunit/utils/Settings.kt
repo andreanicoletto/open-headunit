@@ -1376,9 +1376,10 @@ class Settings(private val context: Context) {
             prefs.edit().putBoolean("use-head-unit-microphone", value).apply()
         }
 
-    /** Vito fork: announce the cluster display and stream it (read when a session starts). */
+    /** Vito fork: announce the cluster display and stream it (read when a session starts). Off by
+     *  default: a phone that refuses the layout ends the whole session. The Cluster screen turns it on. */
     var clusterStream: Boolean
-        get() = prefs.getBoolean("vito-cluster-stream", true)
+        get() = prefs.getBoolean("vito-cluster-stream", false)
         set(value) {
             prefs.edit().putBoolean("vito-cluster-stream", value).apply()
         }
