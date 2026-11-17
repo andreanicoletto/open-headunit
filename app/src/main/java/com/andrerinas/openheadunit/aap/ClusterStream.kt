@@ -31,7 +31,8 @@ internal class ClusterStream(
 
     private var thread: HandlerThread? = null
     private var handler: Handler? = null
-    private var released = false
+    @Volatile private var released = false
+    private val backlog = java.util.concurrent.atomic.AtomicInteger(0)
 
     // Cluster thread only.
     private var frames = 0L
@@ -92,15 +93,25 @@ internal class ClusterStream(
         val acks = AapMessageFraming.completesMediaData(message.type, message.flags.toInt())
         val session = transport.getSessionId(message.channel)
         val handler = handler() ?: return isPayload
+        if (backlog.get() >= BACKLOG_LIMIT) {
+            // Decoder behind: shed this message, mark the fragment run holed so a partial access
+            // unit is not decoded, still ack so the window stays open, and ask a keyframe.
+            if (isPayload) handler.post { video.onFragmentRunHoled(true) }
+            if (acks) transport.sendMediaAck(message.channel, session)
+            requestKeyframe("backlog full, shed a message")
+            return isPayload
+        }
         // shortcut: one copy per message (the read buffer is reused); fine at 30 fps 800x480, pool it if it shows in GC.
         val queued = AapMessage(message.channel, message.flags, message.type, message.dataOffset, message.size,
             message.data.copyOf(message.size))
+        backlog.incrementAndGet()
         handler.post {
             try {
-                video.process(queued)
+                if (!released) video.process(queued)
             } catch (e: Exception) {
                 Log.e(TAG, "process failed", e)
             } finally {
+                backlog.decrementAndGet()
                 if (acks) {
                     transport.sendMediaAck(queued.channel, session)
                     countFrame()
@@ -117,6 +128,11 @@ internal class ClusterStream(
             thread.also { thread = null }
         }
         t?.quitSafely()
+        // Wait for an in-flight process(): a decode after stop() below would start a new codec
+        // after the session ended. The main path joins its video thread the same way.
+        if (t != null && Thread.currentThread() !== t) {
+            try { t.join(1000) } catch (_: InterruptedException) { Thread.currentThread().interrupt() }
+        }
         synchronized(decoder) {
             if (decoder.onKeyframeStarved === keyframeCallback) decoder.onKeyframeStarved = null
             if (decoder.onFrameDropped === keyframeCallback) decoder.onFrameDropped = null
@@ -171,6 +187,8 @@ internal class ClusterStream(
     companion object {
         const val TAG = "VITOCL"
         private const val FPS_LOG_INTERVAL_MS = 10_000L
+        // Messages queued for the cluster thread before new ones are shed (window is 4 frames).
+        private const val BACKLOG_LIMIT = 64
 
         /** The running session's stream, for the Cluster screen to ask a keyframe when its surface arrives. */
         @Volatile
