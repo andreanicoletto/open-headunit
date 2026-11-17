@@ -20,6 +20,8 @@ internal class ClusterFocusPolicy(
         @Synchronized get
         private set
     private var lastKeyframeMs = Long.MIN_VALUE
+    // The phone asked NATIVE on the cluster: no unsolicited PROJECTED until it asks PROJECTED again.
+    private var phoneReleased = false
 
     @Synchronized
     fun onMainVideoData(nowMs: Long) {
@@ -35,12 +37,19 @@ internal class ClusterFocusPolicy(
     @Synchronized
     fun onGrantedOnRequest() {
         granted = true
+        phoneReleased = false
+    }
+
+    /** The phone asked for a non-projected mode on the cluster and we answered it. */
+    @Synchronized
+    fun onReleasedOnRequest() {
+        phoneReleased = true
     }
 
     /** True exactly once, when the unsolicited cluster grant is due. */
     @Synchronized
     fun tryGrant(nowMs: Long): Boolean {
-        if (granted || !clusterSetUp || mainDataSinceMs < 0) return false
+        if (granted || phoneReleased || !clusterSetUp || mainDataSinceMs < 0) return false
         if (nowMs - mainDataSinceMs < grantAfterMainMs) return false
         granted = true
         return true
@@ -49,7 +58,7 @@ internal class ClusterFocusPolicy(
     /** True when a keyframe request may go now; records it. Only after the cluster has focus. */
     @Synchronized
     fun tryKeyframeRequest(nowMs: Long): Boolean {
-        if (!granted) return false
+        if (!granted || phoneReleased) return false
         if (lastKeyframeMs != Long.MIN_VALUE && nowMs - lastKeyframeMs < keyframeGapMs) return false
         lastKeyframeMs = nowMs
         return true

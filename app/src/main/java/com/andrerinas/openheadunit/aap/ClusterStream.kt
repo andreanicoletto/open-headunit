@@ -71,6 +71,7 @@ internal class ClusterStream(
     fun onFocusRequest(request: Media.VideoFocusRequestNotification) {
         log("focus request mode=${request.mode} reason=${request.reason}")
         if (request.mode == Media.VideoFocusMode.VIDEO_FOCUS_PROJECTED) focus.onGrantedOnRequest()
+        else focus.onReleasedOnRequest()
         sendFocus(request.mode, unsolicited = false, why = "answer")
     }
 

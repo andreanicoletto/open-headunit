@@ -51,4 +51,26 @@ class ClusterFocusPolicyTest {
         assertFalse(policy.tryKeyframeRequest(3_599))
         assertTrue(policy.tryKeyframeRequest(3_600))
     }
+
+    @Test
+    fun `after the phone releases the cluster, no unsolicited PROJECTED until it asks again`() {
+        val policy = ClusterFocusPolicy()
+        policy.onClusterSetup()
+        policy.onMainVideoData(0)
+        assertTrue(policy.tryGrant(1_500))
+        policy.onReleasedOnRequest()
+        assertFalse(policy.tryKeyframeRequest(10_000))
+        policy.onGrantedOnRequest()
+        assertTrue(policy.tryKeyframeRequest(10_001))
+    }
+
+    @Test
+    fun `a release before the grant also holds back the unsolicited grant`() {
+        val policy = ClusterFocusPolicy()
+        policy.onClusterSetup()
+        policy.onReleasedOnRequest()
+        policy.onMainVideoData(0)
+        assertFalse(policy.tryGrant(5_000))
+        assertFalse(policy.tryKeyframeRequest(5_000))
+    }
 }
