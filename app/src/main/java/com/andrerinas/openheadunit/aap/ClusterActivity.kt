@@ -10,6 +10,7 @@ import android.view.SurfaceView
 import android.widget.FrameLayout
 import android.widget.TextView
 import com.andrerinas.openheadunit.App
+import com.andrerinas.openheadunit.decoder.video.DecoderStopPolicy
 
 /**
  * Vito fork test screen: shows the cluster stream full screen. The decoder belongs to the app
@@ -57,6 +58,7 @@ class ClusterActivity : Activity(), SurfaceHolder.Callback {
 
     override fun surfaceDestroyed(holder: SurfaceHolder) {
         Log.i(ClusterStream.TAG, "surface detached")
-        App.provide(this).clusterDecoder.detachSurfaceIfCurrent(holder.surface, "cluster surface destroyed")
+        // A surface-lifecycle reason keeps the SPS and size, so a reopen decodes at 800x480.
+        App.provide(this).clusterDecoder.detachSurfaceIfCurrent(holder.surface, DecoderStopPolicy.REASON_SURFACE_DESTROYED)
     }
 }
