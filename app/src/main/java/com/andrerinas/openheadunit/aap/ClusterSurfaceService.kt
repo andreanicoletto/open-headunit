@@ -23,7 +23,7 @@ class ClusterSurfaceService : Service() {
     private val death = IBinder.DeathRecipient { Log.i(ClusterStream.TAG, "surface client died"); detachCurrent() }
 
     private val binder = object : IClusterSurface.Stub() {
-        override fun version() = 1
+        override fun version() = 2
 
         override fun content(): IntArray {
             checkCaller()
@@ -67,14 +67,10 @@ class ClusterSurfaceService : Service() {
         if (App.provide(this).clusterDecoder.detachSurfaceIfCurrent(s, DecoderStopPolicy.REASON_SURFACE_DESTROYED)) {
             ClusterStream.active?.onSurfaceDetached()
         }
+        s.release()   // our copy; the lender keeps its own
     }
 
     override fun onBind(intent: Intent?): IBinder = binder
-
-    override fun onUnbind(intent: Intent?): Boolean {
-        detachCurrent()
-        return false
-    }
 
     override fun onDestroy() {
         detachCurrent()
