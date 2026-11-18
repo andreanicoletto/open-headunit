@@ -67,7 +67,11 @@ class AapBroadcastReceiver : BroadcastReceiver() {
                 )
             }
         } else if (intent.action == ProjectionActivityRequest.action){
-            if (component.commManager.connectionState.value is CommManager.ConnectionState.TransportStarted) {
+            // Vito fork: the phone's video setup asks for the projection screen; with vito-no-auto-raise the
+            // session stays behind the launcher until the driver opens it.
+            if (component.settings.vitoNoAutoRaise) {
+                com.andrerinas.openheadunit.utils.AppLog.i("AapBroadcastReceiver: not raising the projection, vito-no-auto-raise is set")
+            } else if (component.commManager.connectionState.value is CommManager.ConnectionState.TransportStarted) {
                 val aapIntent = Intent(context, AapProjectionActivity::class.java)
                 aapIntent.putExtra(AapProjectionActivity.EXTRA_FOCUS, true)
                 aapIntent.flags = FLAG_ACTIVITY_NEW_TASK
