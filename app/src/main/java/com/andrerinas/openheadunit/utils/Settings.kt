@@ -1412,9 +1412,9 @@ class Settings(private val context: Context) {
 
     /** Vito fork: cluster panel shape and label size, read when a session starts. Margins are the unused
      *  pixels of the 800x480 frame (total per axis); density is the dpi announced to the phone. */
-    val clusterMarginWidth: Int get() = prefs.getInt("vito-cluster-margin-width", 228)
+    val clusterMarginWidth: Int get() = prefs.getInt("vito-cluster-margin-width", 460)
     val clusterMarginHeight: Int get() = prefs.getInt("vito-cluster-margin-height", 0)
-    val clusterDensity: Int get() = prefs.getInt("vito-cluster-density", 240)
+    val clusterDensity: Int get() = prefs.getInt("vito-cluster-density", 160)
 
     /** Vito fork: decode the cluster in software, for units with one hardware decoder instance. */
     var clusterSoftwareDecoder: Boolean
