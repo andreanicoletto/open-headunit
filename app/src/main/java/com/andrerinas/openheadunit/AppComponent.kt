@@ -21,8 +21,8 @@ class AppComponent(private val app: App) {
         DeviceMemoryProfile.readWithOverride(app, settings.debugForceMemoryProfile)
     }
     // Vito fork: the cluster stream's decoder, app-level so it outlives the projection activity.
-    val clusterDecoder = VideoDecoder(settings) {
-        DeviceMemoryProfile.readWithOverride(app, settings.debugForceMemoryProfile)
+    val clusterDecoder by lazy {
+        VideoDecoder(settings) { DeviceMemoryProfile.readWithOverride(app, settings.debugForceMemoryProfile) }
     }
     val audioDecoder = AudioDecoder()
     val nightOverlayState = NightOverlayState()

@@ -35,6 +35,7 @@ internal class ClusterStream(
     private var handler: Handler? = null
     @Volatile private var released = false
     private val backlog = java.util.concurrent.atomic.AtomicInteger(0)
+    private val grantTimerSet = java.util.concurrent.atomic.AtomicBoolean(false)
 
     // Cluster thread only.
     private var frames = 0L
@@ -55,36 +56,52 @@ internal class ClusterStream(
 
     /** Every main-channel picture message, from the read thread. */
     fun onMainVideoData() {
-        val now = SystemClock.elapsedRealtime()
-        focus.onMainVideoData(now)
-        if (focus.tryGrant(now)) sendFocus(Media.VideoFocusMode.VIDEO_FOCUS_PROJECTED, unsolicited = true, why = "main video ran 1.5 s")
+        focus.onMainVideoData(SystemClock.elapsedRealtime())
+        if (grant("main video ran 1.5 s")) return
+        // A still main screen sends no further frames, so the grant needs its own timer (one per session).
+        if (!focus.granted && grantTimerSet.compareAndSet(false, true)) {
+            handler()?.postDelayed({ grant("timer, 1.5 s after the first main frame") }, GRANT_TIMER_MS)
+        }
+    }
+
+    // Policy check and send under one lock, so a nudge cannot go out after the answer to a phone NATIVE.
+    private fun grant(why: String): Boolean = synchronized(focus) {
+        if (released || !focus.tryGrant(SystemClock.elapsedRealtime())) return false
+        sendFocus(Media.VideoFocusMode.VIDEO_FOCUS_PROJECTED, unsolicited = true, why = why)
+        true
     }
 
     /** Called after the cluster Config went out. */
     fun onSetup() {
         log("setup answered")
         focus.onClusterSetup()
-        if (focus.tryGrant(SystemClock.elapsedRealtime())) {
-            sendFocus(Media.VideoFocusMode.VIDEO_FOCUS_PROJECTED, unsolicited = true, why = "setup after main video ran")
-        }
+        grant("setup after main video ran")
     }
 
     /** The phone's VideoFocusRequest on the cluster: answered at once with the mode it asked for. */
     fun onFocusRequest(request: Media.VideoFocusRequestNotification) {
         log("focus request mode=${request.mode} reason=${request.reason}")
-        if (request.mode == Media.VideoFocusMode.VIDEO_FOCUS_PROJECTED) focus.onGrantedOnRequest()
-        else focus.onReleasedOnRequest()
-        sendFocus(request.mode, unsolicited = false, why = "answer")
+        synchronized(focus) {
+            if (ClusterFocusPolicy.isProjected(request.mode.number)) focus.onGrantedOnRequest()
+            else focus.onReleasedOnRequest()
+            sendFocus(request.mode, unsolicited = false, why = "answer")
+        }
     }
 
-    fun onStart(sessionId: Int) = log("start session=$sessionId")
+    fun onStart(sessionId: Int) {
+        log("start session=$sessionId")
+        // The phone starts the stream, so it wants it: a release it asked for earlier is over.
+        focus.onClusterStart()
+    }
 
     fun onStop() = log("stop")
 
     /** Rate-limited unsolicited PROJECTED, the only keyframe request used on the cluster. */
     fun requestKeyframe(reason: String) {
-        if (released || !focus.tryKeyframeRequest(SystemClock.elapsedRealtime())) return
-        sendFocus(Media.VideoFocusMode.VIDEO_FOCUS_PROJECTED, unsolicited = true, why = "keyframe: $reason")
+        synchronized(focus) {
+            if (released || !focus.tryKeyframeRequest(SystemClock.elapsedRealtime())) return
+            sendFocus(Media.VideoFocusMode.VIDEO_FOCUS_PROJECTED, unsolicited = true, why = "keyframe: $reason")
+        }
     }
 
     /**
@@ -144,6 +161,11 @@ internal class ClusterStream(
         video.release()
         // Next session starts the codec again on its first keyframe; the Surface stays attached.
         decoder.stop("cluster session end")
+        // The join timed out on a slow decode: wait it out and stop the codec it may have started.
+        if (t != null && t.isAlive && Thread.currentThread() !== t) {
+            try { t.join(1500) } catch (_: InterruptedException) { Thread.currentThread().interrupt() }
+            decoder.stop("cluster session end, late decode")
+        }
         if (active === this) active = null
         log("released after $frames frames")
     }
@@ -192,6 +214,8 @@ internal class ClusterStream(
         private const val FPS_LOG_INTERVAL_MS = 10_000L
         // Messages queued for the cluster thread before new ones are shed (window is 4 frames).
         private const val BACKLOG_LIMIT = 64
+        // Just past ClusterFocusPolicy's 1.5 s.
+        private const val GRANT_TIMER_MS = 1600L
 
         /** The running session's stream, for the Cluster screen to ask a keyframe when its surface arrives. */
         @Volatile

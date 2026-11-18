@@ -73,4 +73,23 @@ class ClusterFocusPolicyTest {
         assertFalse(policy.tryGrant(5_000))
         assertFalse(policy.tryKeyframeRequest(5_000))
     }
+
+    @Test
+    fun `PROJECTED_NO_INPUT_FOCUS counts as projected, NATIVE modes do not`() {
+        assertTrue(ClusterFocusPolicy.isProjected(1))
+        assertTrue(ClusterFocusPolicy.isProjected(4))
+        assertFalse(ClusterFocusPolicy.isProjected(2))
+        assertFalse(ClusterFocusPolicy.isProjected(3))
+    }
+
+    @Test
+    fun `a cluster Start ends a release the phone asked for`() {
+        val policy = ClusterFocusPolicy()
+        policy.onClusterSetup()
+        policy.onMainVideoData(0)
+        assertTrue(policy.tryGrant(1_500))
+        policy.onReleasedOnRequest()
+        policy.onClusterStart()
+        assertTrue(policy.tryKeyframeRequest(10_000))
+    }
 }

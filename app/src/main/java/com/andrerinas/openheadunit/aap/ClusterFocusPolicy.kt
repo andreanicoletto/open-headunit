@@ -40,6 +40,12 @@ internal class ClusterFocusPolicy(
         phoneReleased = false
     }
 
+    /** The phone sent Start on the cluster: it wants the stream, so an earlier release is over. */
+    @Synchronized
+    fun onClusterStart() {
+        phoneReleased = false
+    }
+
     /** The phone asked for a non-projected mode on the cluster and we answered it. */
     @Synchronized
     fun onReleasedOnRequest() {
@@ -62,5 +68,10 @@ internal class ClusterFocusPolicy(
         if (lastKeyframeMs != Long.MIN_VALUE && nowMs - lastKeyframeMs < keyframeGapMs) return false
         lastKeyframeMs = nowMs
         return true
+    }
+
+    companion object {
+        /** VideoFocusMode numbers that mean "show it": PROJECTED (1) and PROJECTED_NO_INPUT_FOCUS (4). */
+        fun isProjected(mode: Int) = mode == 1 || mode == 4
     }
 }
