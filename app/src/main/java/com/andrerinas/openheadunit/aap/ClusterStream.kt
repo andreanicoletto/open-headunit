@@ -23,7 +23,8 @@ internal class ClusterStream(
     private val decoder: VideoDecoder,
     private val settings: Settings,
 ) {
-    private val focus = ClusterFocusPolicy(pauseHidden = settings.clusterPauseHidden, hidden = !decoder.hasSurface())
+    private val focus = ClusterFocusPolicy(pauseHidden = settings.clusterPauseHidden, hidden = !decoder.hasSurface(),
+        mainMayNeverShow = settings.vitoNoAutoRaise)
     /** This session's display type, fixed at connect: AUXILIARY map instead of CLUSTER. */
     val auxMap = settings.clusterDisplayType == Settings.CLUSTER_DISPLAY_AUX_MAP
     private val video = AapVideo(decoder, settings, forceSoftware = settings.clusterSoftwareDecoder) { requestKeyframe("corrupt access unit") }

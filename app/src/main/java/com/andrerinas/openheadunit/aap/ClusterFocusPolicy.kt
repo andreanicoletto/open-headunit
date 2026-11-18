@@ -15,6 +15,8 @@ internal class ClusterFocusPolicy(
     private val keyframeGapMs: Long = 2000L,
     /** With pause when hidden and a Surface waiting: grant this long after setup even if the main screen never streamed. */
     private val grantWithoutMainMs: Long = 3000L,
+    /** Only a session that keeps its main screen away (vito-no-auto-raise) may grant without main video. */
+    private val mainMayNeverShow: Boolean = true,
     /** Pause when hidden: no focus while there is no Surface. [hidden] is the state at session start. */
     private val pauseHidden: Boolean = false,
     private var hidden: Boolean = false,
@@ -84,7 +86,7 @@ internal class ClusterFocusPolicy(
         // A session started without its screen (the launcher in front) never streams main video; the Surface that
         // is waiting is then the reason to ask. Without pause when hidden the old rule stands.
         val afterMain = mainDataSinceMs >= 0 && nowMs - mainDataSinceMs >= grantAfterMainMs
-        val withoutMain = pauseHidden && mainDataSinceMs < 0 && nowMs - setUpAtMs >= grantWithoutMainMs
+        val withoutMain = pauseHidden && mainMayNeverShow && mainDataSinceMs < 0 && nowMs - setUpAtMs >= grantWithoutMainMs
         if (!afterMain && !withoutMain) return false
         granted = true
         return true

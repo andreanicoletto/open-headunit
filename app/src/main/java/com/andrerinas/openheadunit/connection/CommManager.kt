@@ -1770,7 +1770,8 @@ class CommManager(
         // nothing.
         recordProjectionHealth()
         dimState.resetForNewSession()
-        noteSessionEnded(renderedAnyFrame = videoDecoder.framesRenderedThisSession > 0L, deliberateEnd = reason != DisconnectReason.CONNECTION_ENDED)
+        noteSessionEnded(renderedAnyFrame = videoDecoder.framesRenderedThisSession > 0L, // Vito fork: a session kept behind the launcher renders no main video by design; it must not count as starved.
+            deliberateEnd = reason != DisconnectReason.CONNECTION_ENDED || settings.vitoNoAutoRaise)
         // The close is in its own phase because it is the one that must happen: a throw from the
         // ByeBye send or either decoder stop used to skip it, leaving the phone's head unit server
         // holding a peer that never came back. See TeardownGuard.

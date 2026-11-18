@@ -1267,6 +1267,14 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
                         }
                         is CommManager.ConnectionState.TransportStarted -> {
                             watchdogHandler.removeCallbacks(exitRunnable)
+                            // Vito fork: the service can start the message loop itself (vito-no-auto-raise), so this
+                            // screen may open, or see a reconnect, without ever seeing HandshakeComplete.
+                            if (App.provide(this@AapProjectionActivity).settings.vitoNoAutoRaise) {
+                                watchdogHandler.removeCallbacks(videoWatchdogRunnable)
+                                watchdogHandler.postDelayed(videoWatchdogRunnable, 1000)
+                                HeadUnitScreenConfig.onMarginsDiverged = ::onMarginsDiverged
+                                HeadUnitScreenConfig.onFallbackAdopted = ::onFallbackAdopted
+                            }
                         }
                         // The reconnect is answering. Each of these refreshes the grace.
                         is CommManager.ConnectionState.Connecting -> noteReconnectProgress("connecting")

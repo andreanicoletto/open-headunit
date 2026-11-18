@@ -157,4 +157,13 @@ class ClusterFocusPolicyTest {
         plain.onClusterSetup(10_000)
         assertFalse(plain.tryGrant(60_000))
     }
+
+    @Test
+    fun `a session that shows its main screen never grants without main video`() {
+        val policy = ClusterFocusPolicy(pauseHidden = true, mainMayNeverShow = false)
+        policy.onClusterSetup(10_000)
+        assertFalse(policy.tryGrant(60_000))
+        policy.onMainVideoData(60_000)
+        assertTrue(policy.tryGrant(61_500))
+    }
 }

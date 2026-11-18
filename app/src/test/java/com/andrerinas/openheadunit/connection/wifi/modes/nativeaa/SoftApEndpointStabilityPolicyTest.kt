@@ -262,11 +262,14 @@ class SoftApEndpointStabilityPolicyTest {
     }
 
     @Test
-    fun `a record from before the BSSID was tracked adopts it without losing its proof`() {
+    fun `a record from before the BSSID was tracked adopts it and earns its proof again`() {
         val old = SoftApAddressRecord("192.168.43.1", digest, 7, spannedBoot = true)
-        val v = SoftApEndpointStabilityPolicy.grade(STABLE, "192.168.43.1", psk, 8, old, bssid = "00:11:22:33:44:55")
-        assertEquals(STABLE, v.stability)
-        assertEquals("00:11:22:33:44:55", v.remember!!.bssid)
+        val first = SoftApEndpointStabilityPolicy.grade(STABLE, "192.168.43.1", psk, 8, old, bssid = "00:11:22:33:44:55")
+        assertEquals(UNPROVEN, first.stability)
+        assertEquals(SoftApAddressRecord("192.168.43.1", digest, 8, spannedBoot = false, bssid = "00:11:22:33:44:55"), first.remember)
+        // Same boot again: still not proven. Next boot with the same BSSID: stable.
+        assertEquals(UNPROVEN, SoftApEndpointStabilityPolicy.grade(STABLE, "192.168.43.1", psk, 8, first.remember, bssid = "00:11:22:33:44:55").stability)
+        assertEquals(STABLE, SoftApEndpointStabilityPolicy.grade(STABLE, "192.168.43.1", psk, 9, first.remember, bssid = "00:11:22:33:44:55").stability)
     }
 
     @Test

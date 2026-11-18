@@ -1056,6 +1056,10 @@ class AapService : Service() {
                 AppLog.i("WakeDetect: connection active, but PiP is active. Skipping return to full screen.")
                 return
             }
+            if (App.provide(this).settings.vitoNoAutoRaise) {
+                AppLog.i("WakeDetect: connection active, vito-no-auto-raise is set, staying behind the launcher")
+                return
+            }
             AppLog.i("WakeDetect: connection active, returning to projection")
             try {
                 val projectionIntent = AapProjectionActivity.intent(this).apply {
@@ -2791,9 +2795,10 @@ class AapService : Service() {
     internal fun turnScreenOn(source: String) {
         // Read the panel before the wake lock lights it, or every request reads lit and raises nothing.
         val keyguard = ScreenPower.isKeyguardLocked(this)
+        // Vito fork: the screen may wake, but with vito-no-auto-raise the projection stays behind the launcher.
         val raise = ScreenOnRaisePolicy.decide(
             Build.VERSION.SDK_INT, ScreenPower.isInteractive(this), keyguard, commManager.isConnected
-        )
+        ).let { if (it == ScreenOnRaise.PROJECTION && App.provide(this).settings.vitoNoAutoRaise) ScreenOnRaise.NONE else it }
         ScreenPower.wakeBriefly(this)
         val intent = when (raise) {
             ScreenOnRaise.NONE -> {
