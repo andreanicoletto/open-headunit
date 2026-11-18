@@ -1427,7 +1427,15 @@ class AapService : Service() {
                         sessionEndedByHand = false // A mark from a disconnect that found no session.
                         unprojectedEndsInARow = ProjectionRaiseDeadlinePolicy.endsInARowAfter(
                             unprojectedEndsInARow, projected = false, userRequested = commManager.attemptUserRequested)
-                        armProjectionRaiseDeadline(launchAapProjectionActivity())
+                        val raised = launchAapProjectionActivity()
+                        armProjectionRaiseDeadline(raised)
+                        // Vito fork: the projection screen starts the message loop when its surface is ready. With
+                        // no screen coming the session would sit after the handshake, so start it here; the main
+                        // picture gets no focus until the screen is opened, the second display can run meanwhile.
+                        if (!raised && App.provide(this@AapService).settings.vitoNoAutoRaise) {
+                            AppLog.i("AapService: vito-no-auto-raise, starting the message loop without the projection screen")
+                            serviceScope.launch { commManager.startReading() }
+                        }
                     }
                     is CommManager.ConnectionState.TransportStarted -> {
                         if (commManager.isProjectionVideoFocusSuppressed) {
