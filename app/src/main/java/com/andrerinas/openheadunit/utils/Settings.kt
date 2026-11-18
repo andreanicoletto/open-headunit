@@ -291,6 +291,17 @@ class Settings(private val context: Context) {
             prefs.edit().putBoolean("raise-projection-during-call", value).apply()
         }
 
+    /**
+     * Show the projection over the lock screen. While the unit is locked nothing reaches the phone:
+     * touches, keys and scroll are held back (see [com.andrerinas.openheadunit.input.LockedInputPolicy]),
+     * so the map and directions can be read but nothing can be opened. Off by default.
+     */
+    var showOverLockScreen: Boolean
+        get() = prefs.getBoolean("show-over-lock-screen", false)
+        set(value) {
+            prefs.edit().putBoolean("show-over-lock-screen", value).apply()
+        }
+
     var nightMode: NightMode
         get() {
             val value = prefs.getInt("night-mode", 0)
@@ -2965,6 +2976,12 @@ class Settings(private val context: Context) {
     var nativeAaIgnoreExternalBt: Boolean
         get() = prefs.getBoolean("native-aa-ignore-external-bt", false)
         set(value) = prefs.edit().putBoolean("native-aa-ignore-external-bt", value).apply()
+
+    // Opt-in for dual-radio units whose Android data-service radio starts disabled. This only
+    // enables the selected Android adapter; it does not select an external-module transport.
+    var nativeAaEnableBluetooth: Boolean
+        get() = prefs.getBoolean("native-aa-enable-bluetooth", false)
+        set(value) = prefs.edit().putBoolean("native-aa-enable-bluetooth", value).apply()
 
     var autoKillOemApps: Boolean
         get() = prefs.getBoolean("auto-kill-oem-apps", false)

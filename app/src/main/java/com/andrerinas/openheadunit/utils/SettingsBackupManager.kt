@@ -273,6 +273,7 @@ object SettingsBackupManager {
         "app-theme" to ValueType.INT,
         "enable-rotary" to ValueType.BOOLEAN,
         "kill-on-disconnect" to ValueType.BOOLEAN,
+        "show-over-lock-screen" to ValueType.BOOLEAN,
         "auto-enable-hotspot" to ValueType.BOOLEAN,
         "wait-for-wifi-before-wifi-direct" to ValueType.BOOLEAN,
         "wait-for-wifi-timeout" to ValueType.INT,
@@ -284,6 +285,7 @@ object SettingsBackupManager {
         // flagged unit in the one state where it refuses to start, and the row that turns it back
         // on renders only on flagged units.
         "native-aa-ignore-external-bt" to ValueType.BOOLEAN,
+        "native-aa-enable-bluetooth" to ValueType.BOOLEAN,
         // Selectable from the Android Auto mode block now that the route is wired.
         "native-ap-transport" to ValueType.INT,
         "hotspot-interface" to ValueType.STRING,

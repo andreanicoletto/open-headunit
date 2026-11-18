@@ -229,6 +229,7 @@ class SettingsFragment : Fragment() {
     private var pendingWaitForWifiTimeout by pending::waitForWifiTimeout
     private var pendingBluetoothManagerServiceName by pending::bluetoothManagerServiceName
     private var pendingNativeAaIgnoreExternalBt by pending::nativeAaIgnoreExternalBt
+    private var pendingNativeAaEnableBluetooth by pending::nativeAaEnableBluetooth
     private var pendingExternalBtZbtTransport by pending::externalBtZbtTransport
     private var pendingExternalBtBlinkTransport by pending::externalBtBlinkTransport
     private var pendingExternalBtZjSocketTransport by pending::externalBtZjSocketTransport
@@ -274,6 +275,7 @@ class SettingsFragment : Fragment() {
     private var pendingKillOnDisconnect by pending::killOnDisconnect
     private var pendingAutoKillOemApps by pending::autoKillOemApps
     private var pendingRaiseProjectionDuringCall by pending::raiseProjectionDuringCall
+    private var pendingShowOverLockScreen by pending::showOverLockScreen
 
     // Custom Insets
     private var pendingInsetLeft by pending::insetLeft
@@ -700,6 +702,7 @@ class SettingsFragment : Fragment() {
         pendingKillOnDisconnect?.let { if (it != settings.rawKillOnDisconnect) settings.rawKillOnDisconnect = it }
         pendingAutoKillOemApps?.let { if (it != settings.autoKillOemApps) settings.autoKillOemApps = it }
         pendingRaiseProjectionDuringCall?.let { if (it != settings.raiseProjectionDuringCall) settings.raiseProjectionDuringCall = it }
+        pendingShowOverLockScreen?.let { if (it != settings.showOverLockScreen) settings.showOverLockScreen = it }
         pendingAutoEnableHotspot?.let { if (it != settings.autoEnableHotspot) settings.autoEnableHotspot = it }
         pendingAutoRestartWifi?.let { if (it != settings.autoRestartWifiWhenP2pStuck) settings.autoRestartWifiWhenP2pStuck = it }
         pendingUseLibusb?.let { if (it != settings.useLibusb) settings.useLibusb = it }
@@ -721,6 +724,7 @@ class SettingsFragment : Fragment() {
         pendingWaitForWifiTimeout?.let { if (it != settings.waitForWifiTimeout) settings.waitForWifiTimeout = it }
         pendingBluetoothManagerServiceName?.let { if (it != settings.bluetoothManagerServiceName) settings.bluetoothManagerServiceName = it }
         pendingNativeAaIgnoreExternalBt?.let { if (it != settings.nativeAaIgnoreExternalBt) settings.nativeAaIgnoreExternalBt = it }
+        pendingNativeAaEnableBluetooth?.let { if (it != settings.nativeAaEnableBluetooth) settings.nativeAaEnableBluetooth = it }
         pendingExternalBtZbtTransport?.let { if (it != settings.externalBtZbtTransport) settings.externalBtZbtTransport = it }
         pendingExternalBtBlinkTransport?.let { if (it != settings.externalBtBlinkTransport) settings.externalBtBlinkTransport = it }
         pendingExternalBtZjSocketTransport?.let { if (it != settings.externalBtZjSocketTransport) settings.externalBtZjSocketTransport = it }
@@ -2153,6 +2157,20 @@ class SettingsFragment : Fragment() {
                 }
             ))
         }
+
+        // Map and directions over a locked unit; nothing a person at the unit does reaches the phone.
+        items.add(SettingItem.ToggleSettingEntry(
+            stableId = "showOverLockScreen",
+            nameResId = R.string.show_over_lock_screen,
+            descriptionResId = R.string.show_over_lock_screen_summary,
+            helpResId = R.string.show_over_lock_screen_help,
+            isChecked = pendingShowOverLockScreen ?: settings.showOverLockScreen,
+            onCheckedChanged = { isChecked ->
+                pendingShowOverLockScreen = isChecked
+                checkChanges()
+                updateSettingsList()
+            }
+        ))
 
         if (!isCarLauncherActive) {
             val exitActions = arrayOf(
@@ -4546,6 +4564,21 @@ class SettingsFragment : Fragment() {
                         .show()
                 }
             ))
+
+            if (Build.VERSION.SDK_INT <= 32) {
+                items.add(SettingItem.ToggleSettingEntry(
+                    stableId = "nativeAaEnableBluetooth",
+                    nameResId = R.string.native_aa_enable_bluetooth,
+                    descriptionResId = R.string.native_aa_enable_bluetooth_description,
+                    isChecked = pendingNativeAaEnableBluetooth ?: settings.nativeAaEnableBluetooth,
+                    searchKeywords = "topway ts9 dual bluetooth data service radio enable startup",
+                    onCheckedChanged = { isChecked ->
+                        pendingNativeAaEnableBluetooth = isChecked
+                        checkChanges()
+                        updateSettingsList()
+                    }
+                ))
+            }
 
             // An action, not a switch: the wake's cost is a property of this unit's own Bluetooth
             // stack, which is measured rather than asked. What a user can do is ask for the

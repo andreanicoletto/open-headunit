@@ -1303,6 +1303,10 @@
     <string name="raise_projection_during_call">Stay in Android Auto during calls</string>
     <string name="raise_projection_during_call_description">Self Mode only. Brings the projection back over the phone\'s call screen so calls are answered and ended in the Android Auto interface.</string>
     <string name="raise_projection_during_call_summary">Self Mode only. Show the projection over the phone\'s call screen.</string>
+    <string name="show_over_lock_screen">Show over lock screen</string>
+    <string name="show_over_lock_screen_summary">Map and directions stay visible while locked. Touches and keys do nothing.</string>
+    <string name="show_over_lock_screen_help">Shows the Android Auto picture over the lock screen, so the map and directions can be read without unlocking. While this unit is locked, nothing reaches the phone: touches, keys, the rotary controller and the voice key are held back, and the map is brought to the front. Press Back to unlock with your PIN, pattern or password; after that everything works as usual. Music, calls and the voice assistant on the phone itself are not affected.</string>
+    <string name="show_over_lock_screen_locked_toast">Locked: map only. Press Back to unlock.</string>
     <string name="kill_on_disconnect_warning_title">Warning</string>
     <string name="kill_on_disconnect_warning">The following reconnection settings will conflict with closing the app on disconnect:\n\n%1$s\n\nYour initial connection settings (auto-connect, auto-start) will still work when the headunit turns on. However, after the first disconnection the app will close immediately instead of trying to reconnect.\n\nNote: Some aftermarket head units never fully shut down — they hibernate instead, similar to a phone that locks its screen but never actually powers off. With this option enabled, the app will close after the first disconnection and may not reopen automatically on the next ignition cycle.\n\nWould you like to disable the reconnection settings listed above?</string>
     <string name="kill_on_disconnect_disable_and_enable">Disable and enable</string>
@@ -1546,6 +1550,8 @@
     <string name="native_aa_wake_verdict_destructive">Held back on this unit</string>
     <string name="native_aa_wake_remeasure_confirm">Android Auto only starts wireless when it sees the Bluetooth connection change. Where this unit already holds the hands-free link, the app has to break it to make that happen, so it measures once whether the link comes back and stops if it does not. Use this if wireless stopped starting on its own and you are willing to lose hands-free for a moment while it tries again.</string>
     <string name="native_aa_wake_remeasure_done">The Bluetooth wake will be measured again on the next connection.</string>
+    <string name="native_aa_enable_bluetooth">Enable the selected Bluetooth adapter for Native AA</string>
+    <string name="native_aa_enable_bluetooth_description">Turn on the selected Android adapter before the handshake. Off by default.</string>
     <string name="native_aa_ignore_external_bt_description">This unit looks like it keeps Bluetooth on a separate module that Android cannot reach, so wireless Android Auto is switched off automatically. Choose this only if you think that is wrong: where it is right, the connection fails silently and the log looks healthy.</string>
 
     <!-- The external Bluetooth module probe (Advanced; only on units the detection flags). -->
