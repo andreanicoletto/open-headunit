@@ -1416,6 +1416,9 @@ class Settings(private val context: Context) {
     val clusterMarginHeight: Int get() = prefs.getInt("vito-cluster-margin-height", 0)
     val clusterDensity: Int get() = prefs.getInt("vito-cluster-density", 160)
 
+    /** Vito fork: never tell the phone a WPP-over-TCP endpoint to remember (see NativeAaHandshakeManager.sendWifiVersionRequest). */
+    val vitoWithholdWppEndpoint: Boolean get() = prefs.getBoolean("vito-withhold-wpp-endpoint", true)
+
     /** Vito fork: decode the cluster in software, for units with one hardware decoder instance. */
     var clusterSoftwareDecoder: Boolean
         get() = prefs.getBoolean("vito-cluster-software-decoder", false)

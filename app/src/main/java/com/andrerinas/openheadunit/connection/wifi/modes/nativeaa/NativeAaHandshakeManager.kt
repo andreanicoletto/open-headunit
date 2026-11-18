@@ -4176,7 +4176,12 @@ class NativeAaHandshakeManager(
         alreadyAdvertised: NativeNetworkCredentials?,
     ): NativeNetworkCredentials? {
         val snapshot = credentials
-        val decision = WppEndpointPolicy.decide(
+        // Vito fork: this unit's hotspot gets a new BSSID at every enable, but keeps it while it stays up, so
+        // the stability check passes within one run and the phone then dials a stale endpoint after the next
+        // ignition cycle (seen 2026-11-18: WIRELESS_SETUP_WPP_HU_NOT_PRESENT until the car was forgotten).
+        val decision = if (settings.vitoWithholdWppEndpoint) {
+            WppEndpointDecision.Withhold("Vito fork setting vito-withhold-wpp-endpoint: the phone must use the Bluetooth handshake every time")
+        } else WppEndpointPolicy.decide(
             transport,
             wppTcpServer?.listeningPort,
             snapshot?.identity ?: GroupIdentityStability.UNPROVEN,
