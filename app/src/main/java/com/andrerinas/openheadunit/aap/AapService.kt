@@ -1625,6 +1625,12 @@ class AapService : Service() {
             AppLog.i("AapService: Not raising the projection, a no_ui command asked for the session only")
             return false
         }
+        // Vito fork: a home screen that shows the phone's map itself wants every session, reconnects included,
+        // to stay behind it. The Android Auto tile opens the projection when the driver wants it.
+        if (App.provide(this).settings.vitoNoAutoRaise) {
+            AppLog.i("AapService: Not raising the projection, vito-no-auto-raise is set")
+            return false
+        }
 
         // The user is configuring the app. SettingsActivity raises the projection itself when it
         // goes, and MainActivity.onResume does the same on the way back to the home screen.

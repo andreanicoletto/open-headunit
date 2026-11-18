@@ -137,4 +137,24 @@ class ClusterFocusPolicyTest {
         assertFalse(policy.onSurfaceBack(20_000))
         assertTrue(policy.tryKeyframeRequest(20_001))
     }
+
+    @Test
+    fun `pause when hidden - a waiting Surface gets the grant 3 s after setup when main never streamed`() {
+        val policy = ClusterFocusPolicy(pauseHidden = true, hidden = true)
+        policy.onClusterSetup(10_000)
+        assertFalse(policy.tryGrant(20_000))            // no Surface yet
+        policy.onSurfaceBack(20_000)
+        assertTrue(policy.tryGrant(20_001))
+    }
+
+    @Test
+    fun `pause when hidden - not before 3 s after setup, and never without pause when hidden`() {
+        val policy = ClusterFocusPolicy(pauseHidden = true)
+        policy.onClusterSetup(10_000)
+        assertFalse(policy.tryGrant(12_999))
+        assertTrue(policy.tryGrant(13_000))
+        val plain = ClusterFocusPolicy()
+        plain.onClusterSetup(10_000)
+        assertFalse(plain.tryGrant(60_000))
+    }
 }

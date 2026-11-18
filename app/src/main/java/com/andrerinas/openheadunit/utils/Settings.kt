@@ -1419,6 +1419,9 @@ class Settings(private val context: Context) {
     /** Vito fork: never tell the phone a WPP-over-TCP endpoint to remember (see NativeAaHandshakeManager.sendWifiVersionRequest). */
     val vitoWithholdWppEndpoint: Boolean get() = prefs.getBoolean("vito-withhold-wpp-endpoint", true)
 
+    /** Vito fork: never bring the projection to the front on a connect or reconnect (AapService.launchAapProjectionActivity). */
+    val vitoNoAutoRaise: Boolean get() = prefs.getBoolean("vito-no-auto-raise", false)
+
     /** Vito fork: decode the cluster in software, for units with one hardware decoder instance. */
     var clusterSoftwareDecoder: Boolean
         get() = prefs.getBoolean("vito-cluster-software-decoder", false)

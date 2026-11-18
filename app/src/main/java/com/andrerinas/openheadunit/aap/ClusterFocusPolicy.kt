@@ -13,12 +13,15 @@ package com.andrerinas.openheadunit.aap
 internal class ClusterFocusPolicy(
     private val grantAfterMainMs: Long = 1500L,
     private val keyframeGapMs: Long = 2000L,
+    /** With pause when hidden and a Surface waiting: grant this long after setup even if the main screen never streamed. */
+    private val grantWithoutMainMs: Long = 3000L,
     /** Pause when hidden: no focus while there is no Surface. [hidden] is the state at session start. */
     private val pauseHidden: Boolean = false,
     private var hidden: Boolean = false,
 ) {
     private var mainDataSinceMs = -1L
     private var clusterSetUp = false
+    private var setUpAtMs = 0L
     var granted = false
         @Synchronized get
         private set
@@ -32,8 +35,9 @@ internal class ClusterFocusPolicy(
     }
 
     @Synchronized
-    fun onClusterSetup() {
+    fun onClusterSetup(nowMs: Long = 0L) {
         clusterSetUp = true
+        setUpAtMs = nowMs
     }
 
     /** The phone asked for PROJECTED on the cluster and we answered it: no unsolicited grant needed. */
@@ -75,9 +79,13 @@ internal class ClusterFocusPolicy(
     /** True exactly once, when the unsolicited cluster grant is due. */
     @Synchronized
     fun tryGrant(nowMs: Long): Boolean {
-        if (granted || phoneReleased || !clusterSetUp || mainDataSinceMs < 0) return false
+        if (granted || phoneReleased || !clusterSetUp) return false
         if (pauseHidden && hidden) return false
-        if (nowMs - mainDataSinceMs < grantAfterMainMs) return false
+        // A session started without its screen (the launcher in front) never streams main video; the Surface that
+        // is waiting is then the reason to ask. Without pause when hidden the old rule stands.
+        val afterMain = mainDataSinceMs >= 0 && nowMs - mainDataSinceMs >= grantAfterMainMs
+        val withoutMain = pauseHidden && mainDataSinceMs < 0 && nowMs - setUpAtMs >= grantWithoutMainMs
+        if (!afterMain && !withoutMain) return false
         granted = true
         return true
     }

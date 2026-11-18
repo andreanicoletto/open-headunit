@@ -77,8 +77,8 @@ internal class ClusterStream(
     /** Called after the cluster Config went out. */
     fun onSetup() {
         log("setup answered")
-        focus.onClusterSetup()
-        grant("setup after main video ran")
+        focus.onClusterSetup(SystemClock.elapsedRealtime())
+        if (!grant("setup after main video ran")) grantLater()
     }
 
     /** The phone's VideoFocusRequest on the cluster: answered at once with the mode it asked for. */
@@ -112,7 +112,12 @@ internal class ClusterStream(
             back
         }
         // Not paused: first grant if it was waiting for a Surface, else a codec started mid-stream needs a keyframe.
-        if (!ask && !grant("surface attached")) requestKeyframe("surface attached")
+        if (!ask && !grant("surface attached")) { requestKeyframe("surface attached"); grantLater() }
+    }
+
+    // The grant without main video is due a few seconds after setup; nothing else would trigger the check.
+    private fun grantLater() {
+        if (!focus.granted) handler()?.postDelayed({ grant("surface waiting, main screen never shown") }, GRANT_NO_MAIN_MS)
     }
 
     fun onSurfaceDetached() {
@@ -247,6 +252,8 @@ internal class ClusterStream(
         private const val BACKLOG_LIMIT = 64
         // Just past ClusterFocusPolicy's 1.5 s.
         private const val GRANT_TIMER_MS = 1600L
+        // Just past ClusterFocusPolicy's 3 s.
+        private const val GRANT_NO_MAIN_MS = 3100L
 
         /** The running session's stream, for the Cluster screen to ask a keyframe when its surface arrives. */
         @Volatile
