@@ -99,7 +99,10 @@ internal class ClusterStream(
 
     fun onStop() = log("stop")
 
-    /** The Cluster screen (later: the launcher) attached a Surface to the decoder. */
+    /** Unit going to sleep: let go of the hardware codec, like the main decoder. The next frame starts it again. */
+    fun pauseForSleep() = decoder.stop(com.andrerinas.openheadunit.decoder.video.DecoderStopPolicy.REASON_SCREEN_OFF_SLEEP)
+
+    /** The Cluster screen or ClusterSurfaceService (the launcher) attached a Surface to the decoder. */
     fun onSurfaceAttached() {
         attachRendered = decoder.sessionHealth().framesRendered
         attachMs = SystemClock.elapsedRealtime()

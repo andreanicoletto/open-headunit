@@ -784,6 +784,7 @@ class AapTransport(
         aapAudio.pauseAllAudio()
         closeMicSession()
         videoDecoder.stop(DecoderStopPolicy.REASON_SCREEN_OFF_SLEEP)
+        cluster?.pauseForSleep()
     }
 
     internal fun stop(reason: Control.ByeByeReason = Control.ByeByeReason.USER_SELECTION) {

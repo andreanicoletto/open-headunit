@@ -34,6 +34,13 @@ internal object ClusterDisplay {
     fun services(enabled: Boolean, auxMap: Boolean = false, marginWidth: Int = MARGIN_WIDTH, marginHeight: Int = MARGIN_HEIGHT, density: Int = DENSITY): List<Control.Service> =
         if (enabled) listOf(videoSink(auxMap, marginWidth.coerceIn(0, WIDTH - 160), marginHeight.coerceIn(0, HEIGHT - 120), density.coerceIn(80, 640)), inputSource()) else emptyList()
 
+    /** Frame width and height, then the content rectangle left, top, right, bottom for these margins (clamped like [services]). */
+    fun contentRect(marginWidth: Int, marginHeight: Int): IntArray {
+        val mw = marginWidth.coerceIn(0, WIDTH - 160)
+        val mh = marginHeight.coerceIn(0, HEIGHT - 120)
+        return intArrayOf(WIDTH, HEIGHT, mw / 2, mh / 2, WIDTH - mw / 2, HEIGHT - mh / 2)
+    }
+
     private fun insets(top: Int, bottom: Int, left: Int, right: Int): Media.Insets =
         Media.Insets.newBuilder().setTop(top).setBottom(bottom).setLeft(left).setRight(right).build()
 

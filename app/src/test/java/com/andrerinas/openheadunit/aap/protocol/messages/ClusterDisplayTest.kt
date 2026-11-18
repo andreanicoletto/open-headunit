@@ -120,4 +120,11 @@ class ClusterDisplayTest {
         assertEquals(0, wild.marginHeight)
         assertEquals(640, wild.density)
     }
+
+    @Test
+    fun `content rectangle is centred inside the margins`() {
+        assertEquals(listOf(800, 480, 114, 0, 686, 480), ClusterDisplay.contentRect(228, 0).toList())
+        assertEquals(listOf(800, 480, 0, 0, 800, 480), ClusterDisplay.contentRect(0, 0).toList())
+        assertEquals(listOf(800, 480, 320, 0, 480, 480), ClusterDisplay.contentRect(5000, -3).toList())
+    }
 }

@@ -92,7 +92,9 @@ class ClusterActivity : Activity(), SurfaceHolder.Callback {
     override fun surfaceDestroyed(holder: SurfaceHolder) {
         Log.i(ClusterStream.TAG, "surface detached")
         // A surface-lifecycle reason keeps the SPS and size, so a reopen decodes at 800x480.
-        App.provide(this).clusterDecoder.detachSurfaceIfCurrent(holder.surface, DecoderStopPolicy.REASON_SURFACE_DESTROYED)
-        ClusterStream.active?.onSurfaceDetached()
+        // Not when another Surface (the launcher's, through ClusterSurfaceService) took over meanwhile.
+        if (App.provide(this).clusterDecoder.detachSurfaceIfCurrent(holder.surface, DecoderStopPolicy.REASON_SURFACE_DESTROYED)) {
+            ClusterStream.active?.onSurfaceDetached()
+        }
     }
 }

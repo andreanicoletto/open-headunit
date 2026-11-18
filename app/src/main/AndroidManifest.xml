@@ -59,6 +59,12 @@
         android:name="${applicationId}.permission.NAVIGATION_UPDATE"
         android:protectionLevel="normal" />
 
+    <!-- Vito fork: who may bind ClusterSurfaceService. Normal level (the launcher has another signing key);
+         the service also checks the caller's package. -->
+    <permission
+        android:name="${applicationId}.permission.CLUSTER_SURFACE"
+        android:protectionLevel="normal" />
+
     <uses-permission android:name="android.permission.TURN_SCREEN_ON" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
@@ -280,6 +286,12 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- Vito fork: the launcher lends a Surface for the cluster picture (docs/aa-receiver/handover-notes.md). -->
+        <service
+            android:name=".aap.ClusterSurfaceService"
+            android:exported="true"
+            android:permission="${applicationId}.permission.CLUSTER_SURFACE" />
 
         <service
             android:name=".aap.AapService"
