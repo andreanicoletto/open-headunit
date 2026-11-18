@@ -55,7 +55,7 @@ internal class ClusterStream(
         active = this
     }
 
-    fun onDiscoverySent() = log("discovery sent (pause-hidden=${settings.clusterPauseHidden} software=${settings.clusterSoftwareDecoder}) with ${if (auxMap) "AUXILIARY (map, keycode NAVIGATION)" else "CLUSTER"} sink ch=${Channel.ID_CLU_VID} and input ch=${Channel.ID_CLU_INP}")
+    fun onDiscoverySent() = log("discovery sent (pause-hidden=${settings.clusterPauseHidden} software=${settings.clusterSoftwareDecoder} margins=${settings.clusterMarginWidth}x${settings.clusterMarginHeight} dpi=${settings.clusterDensity}) with ${if (auxMap) "AUXILIARY (map, keycode NAVIGATION)" else "CLUSTER"} sink ch=${Channel.ID_CLU_VID} and input ch=${Channel.ID_CLU_INP}")
 
     /** Every main-channel picture message, from the read thread. */
     fun onMainVideoData() {

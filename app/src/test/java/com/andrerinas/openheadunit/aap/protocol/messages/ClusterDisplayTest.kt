@@ -105,4 +105,19 @@ class ClusterDisplayTest {
         assertFalse(Channel.ID_CLU_INP in used)
         assertTrue(Channel.ID_CLU_VID != Channel.ID_CLU_INP)
     }
+
+    @Test
+    fun `margins and density from settings reach the config and the ui_config, clamped`() {
+        val config = ClusterDisplay.services(enabled = true, marginWidth = 228, marginHeight = 0, density = 240)
+            .single { it.hasMediaSinkService() }.mediaSinkService.getVideoConfigs(0)
+        assertEquals(228, config.marginWidth)
+        assertEquals(240, config.density)
+        assertEquals(114, config.uiConfig.margins.left)
+        assertEquals(114, config.uiConfig.margins.right)
+        val wild = ClusterDisplay.services(enabled = true, marginWidth = 5000, marginHeight = -3, density = 9999)
+            .single { it.hasMediaSinkService() }.mediaSinkService.getVideoConfigs(0)
+        assertEquals(640, wild.marginWidth)
+        assertEquals(0, wild.marginHeight)
+        assertEquals(640, wild.density)
+    }
 }

@@ -1399,6 +1399,12 @@ class Settings(private val context: Context) {
         get() = prefs.getBoolean("vito-cluster-pause-hidden", false)
         set(value) { prefs.edit().putBoolean("vito-cluster-pause-hidden", value).apply() }
 
+    /** Vito fork: cluster panel shape and label size, read when a session starts. Margins are the unused
+     *  pixels of the 800x480 frame (total per axis); density is the dpi announced to the phone. */
+    val clusterMarginWidth: Int get() = prefs.getInt("vito-cluster-margin-width", 0)
+    val clusterMarginHeight: Int get() = prefs.getInt("vito-cluster-margin-height", 0)
+    val clusterDensity: Int get() = prefs.getInt("vito-cluster-density", 160)
+
     /** Vito fork: decode the cluster in software, for units with one hardware decoder instance. */
     var clusterSoftwareDecoder: Boolean
         get() = prefs.getBoolean("vito-cluster-software-decoder", false)

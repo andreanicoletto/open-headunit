@@ -31,15 +31,15 @@ internal object ClusterDisplay {
      * [auxMap] false: a CLUSTER sink, the phone alone picks map or turn card. True: an AUXILIARY
      * sink with initial_content_keycode NAVIGATION (upstream draft PR #1097's default). All else equal.
      */
-    fun services(enabled: Boolean, auxMap: Boolean = false): List<Control.Service> =
-        if (enabled) listOf(videoSink(auxMap), inputSource()) else emptyList()
+    fun services(enabled: Boolean, auxMap: Boolean = false, marginWidth: Int = MARGIN_WIDTH, marginHeight: Int = MARGIN_HEIGHT, density: Int = DENSITY): List<Control.Service> =
+        if (enabled) listOf(videoSink(auxMap, marginWidth.coerceIn(0, WIDTH - 160), marginHeight.coerceIn(0, HEIGHT - 120), density.coerceIn(80, 640)), inputSource()) else emptyList()
 
     private fun insets(top: Int, bottom: Int, left: Int, right: Int): Media.Insets =
         Media.Insets.newBuilder().setTop(top).setBottom(bottom).setLeft(left).setRight(right).build()
 
-    private fun videoSink(auxMap: Boolean): Control.Service {
+    private fun videoSink(auxMap: Boolean, marginWidth: Int, marginHeight: Int, density: Int): Control.Service {
         val uiConfig = Media.UiConfig.newBuilder()
-            .setMargins(insets(MARGIN_HEIGHT / 2, MARGIN_HEIGHT / 2, MARGIN_WIDTH / 2, MARGIN_WIDTH / 2))
+            .setMargins(insets(marginHeight / 2, marginHeight / 2, marginWidth / 2, marginWidth / 2))
             .setContentInsets(insets(0, 0, 0, 0))
             .setStableContentInsets(insets(0, 0, 0, 0))
             .setUiTheme(0) // automatic
@@ -47,10 +47,10 @@ internal object ClusterDisplay {
         val config = Control.Service.MediaSinkService.VideoConfiguration.newBuilder()
             .setCodecResolution(Control.Service.MediaSinkService.VideoConfiguration.VideoCodecResolutionType._800x480)
             .setFrameRate(Control.Service.MediaSinkService.VideoConfiguration.VideoFrameRateType._30)
-            .setMarginWidth(MARGIN_WIDTH)
-            .setMarginHeight(MARGIN_HEIGHT)
-            .setDensity(DENSITY)
-            .setRealDensity(DENSITY)
+            .setMarginWidth(marginWidth)
+            .setMarginHeight(marginHeight)
+            .setDensity(density)
+            .setRealDensity(density)
             .setDecoderAdditionalDepth(0)
             .setViewingDistance(VIEWING_DISTANCE)
             .setPixelAspectRatioE4(10000)
