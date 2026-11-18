@@ -1395,11 +1395,11 @@ class Settings(private val context: Context) {
             prefs.edit().putBoolean("vito-cluster-stream", value).apply()
         }
 
-    /** Vito fork: what the second display is announced as, [CLUSTER_DISPLAY_CLUSTER] (default) or
-     *  [CLUSTER_DISPLAY_AUX_MAP]. Read when a session starts. */
+    /** Vito fork: what the second display is announced as, [CLUSTER_DISPLAY_CLUSTER] or
+     *  [CLUSTER_DISPLAY_AUX_MAP] (default since the phone test of 2026-11-18). Read when a session starts. */
     var clusterDisplayType: String
         get() = prefs.getString("vito-cluster-display-type", null)
-            .takeIf { it == CLUSTER_DISPLAY_AUX_MAP } ?: CLUSTER_DISPLAY_CLUSTER
+            .takeIf { it == CLUSTER_DISPLAY_CLUSTER } ?: CLUSTER_DISPLAY_AUX_MAP
         set(value) {
             prefs.edit().putString("vito-cluster-display-type", value).apply()
         }
@@ -1407,14 +1407,14 @@ class Settings(private val context: Context) {
     /** Vito fork: without a Surface the cluster gives its focus back (phone stops the stream) and asks
      *  again when a Surface arrives. Off: the stream keeps running unseen. Read when a session starts. */
     var clusterPauseHidden: Boolean
-        get() = prefs.getBoolean("vito-cluster-pause-hidden", false)
+        get() = prefs.getBoolean("vito-cluster-pause-hidden", true)
         set(value) { prefs.edit().putBoolean("vito-cluster-pause-hidden", value).apply() }
 
     /** Vito fork: cluster panel shape and label size, read when a session starts. Margins are the unused
      *  pixels of the 800x480 frame (total per axis); density is the dpi announced to the phone. */
-    val clusterMarginWidth: Int get() = prefs.getInt("vito-cluster-margin-width", 0)
+    val clusterMarginWidth: Int get() = prefs.getInt("vito-cluster-margin-width", 228)
     val clusterMarginHeight: Int get() = prefs.getInt("vito-cluster-margin-height", 0)
-    val clusterDensity: Int get() = prefs.getInt("vito-cluster-density", 160)
+    val clusterDensity: Int get() = prefs.getInt("vito-cluster-density", 240)
 
     /** Vito fork: decode the cluster in software, for units with one hardware decoder instance. */
     var clusterSoftwareDecoder: Boolean
