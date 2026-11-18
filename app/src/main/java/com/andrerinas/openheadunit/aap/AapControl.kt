@@ -64,11 +64,13 @@ internal class AapControlMedia(
                     // Left unanswered, Google Maps resuming a route in the gap made the phone
                     // restart its projection. Without a surface the projection screen sends its
                     // own gain when the surface arrives, as before.
-                    if (aapTransport.videoDecoderHasSurface()) {
+                    // Only while the projection screen is in front: with the texture views the decoder
+                    // keeps its Surface while something else covers the screen.
+                    if (AapProjectionActivity.isForeground && aapTransport.videoDecoderHasSurface()) {
                         AppLog.i("Video focus PROJECTED granted on request")
                         aapTransport.send(VideoFocusEvent(gain = true, unsolicited = false))
                     } else {
-                        AppLog.i("Video focus PROJECTED requested before the surface exists; the projection screen will grant it")
+                        AppLog.i("Video focus PROJECTED requested while the projection is not showing; the projection screen will grant it")
                     }
                     return 0
                 }
