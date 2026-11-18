@@ -127,10 +127,10 @@ class AapNavigationHelper(
         context.applicationContext.sendBroadcast(intent, NavigationUpdateIntent.BROADCAST_PERMISSION)
         // Vito fork: the launcher shows the phone's map only while these arrive, so make them visible in the log
         // (first one, then at most one line per 10 s; no road names, they are the user's route).
-        val now = android.os.SystemClock.elapsedRealtime()
+        val now = System.nanoTime() / 1_000_000L   // not SystemClock: this runs in plain unit tests too
         if (now - vitoNavLoggedMs >= 10_000L || vitoNavLoggedMs == 0L) {
             vitoNavLoggedMs = now
-            android.util.Log.i("VITOCL", "nav broadcast sent: event=${prepared.nextEventType} side=${prepared.turnSide} distance=${prepared.distanceMeters} m total=${prepared.totalDistanceMeters} m")
+            runCatching { android.util.Log.i("VITOCL", "nav broadcast sent: event=${prepared.nextEventType} side=${prepared.turnSide} distance=${prepared.distanceMeters} m total=${prepared.totalDistanceMeters} m") }
         }
     }
 
