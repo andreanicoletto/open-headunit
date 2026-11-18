@@ -21,12 +21,12 @@ import com.andrerinas.openheadunit.utils.Settings
 internal class ClusterStream(
     private val transport: AapTransport,
     private val decoder: VideoDecoder,
-    settings: Settings,
+    private val settings: Settings,
 ) {
-    private val focus = ClusterFocusPolicy()
+    private val focus = ClusterFocusPolicy(pauseHidden = settings.clusterPauseHidden, hidden = !decoder.hasSurface())
     /** This session's display type, fixed at connect: AUXILIARY map instead of CLUSTER. */
     val auxMap = settings.clusterDisplayType == Settings.CLUSTER_DISPLAY_AUX_MAP
-    private val video = AapVideo(decoder, settings) { requestKeyframe("corrupt access unit") }
+    private val video = AapVideo(decoder, settings, forceSoftware = settings.clusterSoftwareDecoder) { requestKeyframe("corrupt access unit") }
         .also { it.recordAnnouncedCodec(VideoDecoder.CodecType.H264) }
     private val keyframeCallback: () -> Unit = { requestKeyframe("decoder needs a keyframe") }
     private val errorCallback: (String) -> Unit = { requestKeyframe("decoder error: $it") }
@@ -36,6 +36,9 @@ internal class ClusterStream(
     @Volatile private var released = false
     private val backlog = java.util.concurrent.atomic.AtomicInteger(0)
     private val grantTimerSet = java.util.concurrent.atomic.AtomicBoolean(false)
+    // Surface attach time and the render count then, for the "attach to first picture" log; 0 = not waiting.
+    @Volatile private var attachMs = 0L
+    @Volatile private var attachRendered = 0L
 
     // Cluster thread only.
     private var frames = 0L
@@ -52,7 +55,7 @@ internal class ClusterStream(
         active = this
     }
 
-    fun onDiscoverySent() = log("discovery sent with ${if (auxMap) "AUXILIARY (map, keycode NAVIGATION)" else "CLUSTER"} sink ch=${Channel.ID_CLU_VID} and input ch=${Channel.ID_CLU_INP}")
+    fun onDiscoverySent() = log("discovery sent (pause-hidden=${settings.clusterPauseHidden} software=${settings.clusterSoftwareDecoder}) with ${if (auxMap) "AUXILIARY (map, keycode NAVIGATION)" else "CLUSTER"} sink ch=${Channel.ID_CLU_VID} and input ch=${Channel.ID_CLU_INP}")
 
     /** Every main-channel picture message, from the read thread. */
     fun onMainVideoData() {
@@ -95,6 +98,26 @@ internal class ClusterStream(
     }
 
     fun onStop() = log("stop")
+
+    /** The Cluster screen (later: the launcher) attached a Surface to the decoder. */
+    fun onSurfaceAttached() {
+        attachRendered = decoder.sessionHealth().framesRendered
+        attachMs = SystemClock.elapsedRealtime()
+        val ask = synchronized(focus) {
+            val back = focus.onSurfaceBack(attachMs)
+            if (back) sendFocus(Media.VideoFocusMode.VIDEO_FOCUS_PROJECTED, unsolicited = true, why = "surface back")
+            back
+        }
+        // Not paused: first grant if it was waiting for a Surface, else a codec started mid-stream needs a keyframe.
+        if (!ask && !grant("surface attached")) requestKeyframe("surface attached")
+    }
+
+    fun onSurfaceDetached() {
+        attachMs = 0L
+        synchronized(focus) {
+            if (focus.onSurfaceLost()) sendFocus(Media.VideoFocusMode.VIDEO_FOCUS_NATIVE, unsolicited = true, why = "surface lost, pause when hidden")
+        }
+    }
 
     /** Rate-limited unsolicited PROJECTED, the only keyframe request used on the cluster. */
     fun requestKeyframe(reason: String) {
@@ -189,6 +212,11 @@ internal class ClusterStream(
             windowFrames = 0
         }
         windowFrames++
+        val attached = attachMs
+        if (attached != 0L && decoder.sessionHealth().framesRendered > attachRendered) {
+            attachMs = 0L
+            log("attach to first rendered frame: ${now - attached} ms")
+        }
         val elapsed = now - windowStartMs
         if (elapsed >= FPS_LOG_INTERVAL_MS) {
             val health = decoder.sessionHealth()

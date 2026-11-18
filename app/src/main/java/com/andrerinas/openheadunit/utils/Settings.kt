@@ -1393,6 +1393,17 @@ class Settings(private val context: Context) {
             prefs.edit().putString("vito-cluster-display-type", value).apply()
         }
 
+    /** Vito fork: without a Surface the cluster gives its focus back (phone stops the stream) and asks
+     *  again when a Surface arrives. Off: the stream keeps running unseen. Read when a session starts. */
+    var clusterPauseHidden: Boolean
+        get() = prefs.getBoolean("vito-cluster-pause-hidden", false)
+        set(value) { prefs.edit().putBoolean("vito-cluster-pause-hidden", value).apply() }
+
+    /** Vito fork: decode the cluster in software, for units with one hardware decoder instance. */
+    var clusterSoftwareDecoder: Boolean
+        get() = prefs.getBoolean("vito-cluster-software-decoder", false)
+        set(value) { prefs.edit().putBoolean("vito-cluster-software-decoder", value).apply() }
+
     var enableAudioSink: Boolean
         get() = prefs.getBoolean("enable-audio-sink", true)
         set(value) { prefs.edit().putBoolean("enable-audio-sink", value).apply() }

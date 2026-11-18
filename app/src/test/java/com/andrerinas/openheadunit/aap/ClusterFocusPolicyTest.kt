@@ -92,4 +92,49 @@ class ClusterFocusPolicyTest {
         policy.onClusterStart()
         assertTrue(policy.tryKeyframeRequest(10_000))
     }
+
+    @Test
+    fun `pause when hidden - no grant without a Surface, grant when it arrives`() {
+        val policy = ClusterFocusPolicy(pauseHidden = true, hidden = true)
+        policy.onClusterSetup()
+        policy.onMainVideoData(0)
+        assertFalse(policy.tryGrant(5_000))
+        assertFalse(policy.onSurfaceBack(5_000)) // nothing to ask back, the first grant follows
+        assertTrue(policy.tryGrant(5_001))
+    }
+
+    @Test
+    fun `pause when hidden - focus given back on Surface loss and asked again on return`() {
+        val policy = ClusterFocusPolicy(pauseHidden = true)
+        policy.onClusterSetup()
+        policy.onMainVideoData(0)
+        assertTrue(policy.tryGrant(1_500))
+        assertTrue(policy.onSurfaceLost())
+        assertFalse(policy.tryKeyframeRequest(10_000))
+        assertTrue(policy.onSurfaceBack(20_000))
+        assertFalse(policy.tryKeyframeRequest(20_500)) // the return counted as a keyframe request
+        assertTrue(policy.tryKeyframeRequest(22_000))
+    }
+
+    @Test
+    fun `pause when hidden - a release the phone asked for is not overridden by a Surface`() {
+        val policy = ClusterFocusPolicy(pauseHidden = true)
+        policy.onClusterSetup()
+        policy.onMainVideoData(0)
+        assertTrue(policy.tryGrant(1_500))
+        policy.onReleasedOnRequest()
+        assertFalse(policy.onSurfaceLost())
+        assertFalse(policy.onSurfaceBack(20_000))
+    }
+
+    @Test
+    fun `pause off - Surface changes send nothing`() {
+        val policy = ClusterFocusPolicy()
+        policy.onClusterSetup()
+        policy.onMainVideoData(0)
+        assertTrue(policy.tryGrant(1_500))
+        assertFalse(policy.onSurfaceLost())
+        assertFalse(policy.onSurfaceBack(20_000))
+        assertTrue(policy.tryKeyframeRequest(20_001))
+    }
 }

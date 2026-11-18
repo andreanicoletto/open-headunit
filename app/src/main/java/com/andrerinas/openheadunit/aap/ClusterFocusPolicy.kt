@@ -13,6 +13,9 @@ package com.andrerinas.openheadunit.aap
 internal class ClusterFocusPolicy(
     private val grantAfterMainMs: Long = 1500L,
     private val keyframeGapMs: Long = 2000L,
+    /** Pause when hidden: no focus while there is no Surface. [hidden] is the state at session start. */
+    private val pauseHidden: Boolean = false,
+    private var hidden: Boolean = false,
 ) {
     private var mainDataSinceMs = -1L
     private var clusterSetUp = false
@@ -52,10 +55,28 @@ internal class ClusterFocusPolicy(
         phoneReleased = true
     }
 
+    /** The Surface went away. True when focus must be given back now (unsolicited NATIVE). */
+    @Synchronized
+    fun onSurfaceLost(): Boolean {
+        hidden = true
+        return pauseHidden && granted && !phoneReleased
+    }
+
+    /** A Surface arrived. True when focus must be asked back now (unsolicited PROJECTED, brings a keyframe). */
+    @Synchronized
+    fun onSurfaceBack(nowMs: Long): Boolean {
+        val wasHidden = hidden
+        hidden = false
+        if (!pauseHidden || !wasHidden || !granted || phoneReleased) return false
+        lastKeyframeMs = nowMs
+        return true
+    }
+
     /** True exactly once, when the unsolicited cluster grant is due. */
     @Synchronized
     fun tryGrant(nowMs: Long): Boolean {
         if (granted || phoneReleased || !clusterSetUp || mainDataSinceMs < 0) return false
+        if (pauseHidden && hidden) return false
         if (nowMs - mainDataSinceMs < grantAfterMainMs) return false
         granted = true
         return true
@@ -64,7 +85,7 @@ internal class ClusterFocusPolicy(
     /** True when a keyframe request may go now; records it. Only after the cluster has focus. */
     @Synchronized
     fun tryKeyframeRequest(nowMs: Long): Boolean {
-        if (!granted || phoneReleased) return false
+        if (!granted || phoneReleased || (pauseHidden && hidden)) return false
         if (lastKeyframeMs != Long.MIN_VALUE && nowMs - lastKeyframeMs < keyframeGapMs) return false
         lastKeyframeMs = nowMs
         return true

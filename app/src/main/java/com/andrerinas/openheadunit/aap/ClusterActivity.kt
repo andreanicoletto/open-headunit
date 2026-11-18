@@ -55,8 +55,23 @@ class ClusterActivity : Activity(), SurfaceHolder.Callback {
             setBackgroundColor(Color.BLACK)
             addView(surface, FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT))
             addView(label, FrameLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT, Gravity.TOP or Gravity.START))
+            // Test switches, both used at the next connect.
+            val settings = App.provide(this@ClusterActivity).settings
+            addView(switch("pause when hidden", { settings.clusterPauseHidden }) { settings.clusterPauseHidden = it },
+                FrameLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT, Gravity.BOTTOM or Gravity.START))
+            addView(switch("software decoder", { settings.clusterSoftwareDecoder }) { settings.clusterSoftwareDecoder = it },
+                FrameLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT, Gravity.BOTTOM or Gravity.END))
         })
         updateLabel()
+    }
+
+    private fun switch(name: String, get: () -> Boolean, set: (Boolean) -> Unit) = TextView(this).apply {
+        setTextColor(Color.WHITE)
+        setBackgroundColor(0x80000000.toInt())
+        setPadding(16, 8, 16, 8)
+        val show = { text = "$name: ${if (get()) "ON" else "OFF"} (tap; next connect)" }
+        setOnClickListener { set(!get()); show() }
+        show()
     }
 
     private fun updateLabel() {
@@ -70,13 +85,14 @@ class ClusterActivity : Activity(), SurfaceHolder.Callback {
     override fun surfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {
         Log.i(ClusterStream.TAG, "surface attached ${width}x$height")
         App.provide(this).clusterDecoder.setSurface(holder.surface)
-        // A codec started mid-stream sees only P-frames until the next keyframe.
-        ClusterStream.active?.requestKeyframe("surface attached")
+        // Asks focus back (pause when hidden) or a keyframe: a codec started mid-stream sees only P-frames.
+        ClusterStream.active?.onSurfaceAttached()
     }
 
     override fun surfaceDestroyed(holder: SurfaceHolder) {
         Log.i(ClusterStream.TAG, "surface detached")
         // A surface-lifecycle reason keeps the SPS and size, so a reopen decodes at 800x480.
         App.provide(this).clusterDecoder.detachSurfaceIfCurrent(holder.surface, DecoderStopPolicy.REASON_SURFACE_DESTROYED)
+        ClusterStream.active?.onSurfaceDetached()
     }
 }
