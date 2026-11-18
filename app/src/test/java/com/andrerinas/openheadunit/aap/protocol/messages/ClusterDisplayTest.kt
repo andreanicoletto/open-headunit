@@ -74,6 +74,29 @@ class ClusterDisplayTest {
     }
 
     @Test
+    fun `a CLUSTER sink carries no initial content keycode`() {
+        val sink = ClusterDisplay.services(enabled = true).single { it.hasMediaSinkService() }.mediaSinkService
+        assertFalse(sink.hasInitialContentKeycode())
+    }
+
+    @Test
+    fun `aux-map is an AUXILIARY sink asking for the navigation map, everything else as the cluster`() {
+        val cluster = ClusterDisplay.services(enabled = true, auxMap = false)
+        val aux = ClusterDisplay.services(enabled = true, auxMap = true)
+        val sink = aux.single { it.hasMediaSinkService() }.mediaSinkService
+        assertEquals(Control.Service.MediaSinkService.DisplayType.DISPLAY_TYPE_AUXILIARY, sink.displayType)
+        assertEquals(65538, sink.initialContentKeycode)
+        // Wire: display_type = 7 is 2, initial_content_keycode = 8 is 65538.
+        val fields = com.google.protobuf.UnknownFieldSet.parseFrom(sink.toByteArray()).asMap()
+        assertEquals(listOf(2L), fields.getValue(7).varintList)
+        assertEquals(listOf(65538L), fields.getValue(8).varintList)
+        val clusterSink = cluster.single { it.hasMediaSinkService() }.mediaSinkService
+        assertEquals(clusterSink.toBuilder().clearDisplayType().build(),
+            sink.toBuilder().clearDisplayType().clearInitialContentKeycode().build())
+        assertEquals(cluster.single { it.hasInputSourceService() }, aux.single { it.hasInputSourceService() })
+    }
+
+    @Test
     fun `the cluster channels do not collide with the existing ones`() {
         val used = setOf(Channel.ID_CTR, Channel.ID_SEN, Channel.ID_VID, Channel.ID_INP, Channel.ID_AU1,
             Channel.ID_AU2, Channel.ID_AUD, Channel.ID_MIC, Channel.ID_BTH, Channel.ID_MPB, Channel.ID_NAV,

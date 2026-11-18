@@ -1384,6 +1384,15 @@ class Settings(private val context: Context) {
             prefs.edit().putBoolean("vito-cluster-stream", value).apply()
         }
 
+    /** Vito fork: what the second display is announced as, [CLUSTER_DISPLAY_CLUSTER] (default) or
+     *  [CLUSTER_DISPLAY_AUX_MAP]. Read when a session starts. */
+    var clusterDisplayType: String
+        get() = prefs.getString("vito-cluster-display-type", null)
+            .takeIf { it == CLUSTER_DISPLAY_AUX_MAP } ?: CLUSTER_DISPLAY_CLUSTER
+        set(value) {
+            prefs.edit().putString("vito-cluster-display-type", value).apply()
+        }
+
     var enableAudioSink: Boolean
         get() = prefs.getBoolean("enable-audio-sink", true)
         set(value) { prefs.edit().putBoolean("enable-audio-sink", value).apply() }
@@ -2082,6 +2091,8 @@ class Settings(private val context: Context) {
 
     companion object {
         const val PREFS_NAME = "settings"
+        const val CLUSTER_DISPLAY_CLUSTER = "cluster"
+        const val CLUSTER_DISPLAY_AUX_MAP = "aux-map"
 
         const val KEY_BINDINGS = "key-bindings"
 

@@ -306,7 +306,7 @@ internal class ServiceDiscoveryResponse(context: Context, audioConfig: AudioSess
             services.add(navigationStatus)
 
             // Vito fork: cluster sink + input, only when this session's transport streams it.
-            services.addAll(ClusterDisplay.services(enabled = transport.cluster != null))
+            services.addAll(ClusterDisplay.services(enabled = transport.cluster != null, auxMap = transport.cluster?.auxMap == true))
             transport.cluster?.onDiscoverySent()
 
             val sessionConfig = (if (settings.hideClock) 0x01 else 0) or

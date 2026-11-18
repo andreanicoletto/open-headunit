@@ -11,11 +11,13 @@ import android.widget.FrameLayout
 import android.widget.TextView
 import com.andrerinas.openheadunit.App
 import com.andrerinas.openheadunit.decoder.video.DecoderStopPolicy
+import com.andrerinas.openheadunit.utils.Settings
 
 /**
  * Vito fork test screen: shows the cluster stream full screen. The decoder belongs to the app
  * (AppComponent.clusterDecoder), so leaving this screen only detaches the Surface; the stream keeps
- * running and being acked. The label toggles the cluster setting (used at the next connect).
+ * running and being acked. The label toggles the cluster setting, a long press also cycles the
+ * display type (both used at the next connect).
  */
 class ClusterActivity : Activity(), SurfaceHolder.Callback {
 
@@ -33,6 +35,21 @@ class ClusterActivity : Activity(), SurfaceHolder.Callback {
                 settings.clusterStream = !settings.clusterStream
                 updateLabel()
             }
+            // Long press cycles off -> cluster -> aux-map -> off.
+            setOnLongClickListener {
+                val settings = App.provide(this@ClusterActivity).settings
+                when {
+                    !settings.clusterStream -> {
+                        settings.clusterStream = true
+                        settings.clusterDisplayType = Settings.CLUSTER_DISPLAY_CLUSTER
+                    }
+                    settings.clusterDisplayType == Settings.CLUSTER_DISPLAY_CLUSTER ->
+                        settings.clusterDisplayType = Settings.CLUSTER_DISPLAY_AUX_MAP
+                    else -> settings.clusterStream = false
+                }
+                updateLabel()
+                true
+            }
         }
         setContentView(FrameLayout(this).apply {
             setBackgroundColor(Color.BLACK)
@@ -43,8 +60,9 @@ class ClusterActivity : Activity(), SurfaceHolder.Callback {
     }
 
     private fun updateLabel() {
-        val on = App.provide(this).settings.clusterStream
-        label.text = "Cluster stream ${if (on) "ON" else "OFF"} (tap to change, applies at next connect)"
+        val settings = App.provide(this).settings
+        val state = if (settings.clusterStream) "ON, ${settings.clusterDisplayType}" else "OFF"
+        label.text = "Cluster stream $state (tap: on/off, long press: off/cluster/aux-map; next connect)"
     }
 
     override fun surfaceCreated(holder: SurfaceHolder) {}

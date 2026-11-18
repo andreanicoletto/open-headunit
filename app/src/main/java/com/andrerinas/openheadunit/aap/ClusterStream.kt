@@ -24,6 +24,8 @@ internal class ClusterStream(
     settings: Settings,
 ) {
     private val focus = ClusterFocusPolicy()
+    /** This session's display type, fixed at connect: AUXILIARY map instead of CLUSTER. */
+    val auxMap = settings.clusterDisplayType == Settings.CLUSTER_DISPLAY_AUX_MAP
     private val video = AapVideo(decoder, settings) { requestKeyframe("corrupt access unit") }
         .also { it.recordAnnouncedCodec(VideoDecoder.CodecType.H264) }
     private val keyframeCallback: () -> Unit = { requestKeyframe("decoder needs a keyframe") }
@@ -49,7 +51,7 @@ internal class ClusterStream(
         active = this
     }
 
-    fun onDiscoverySent() = log("discovery sent with cluster sink ch=${Channel.ID_CLU_VID} and input ch=${Channel.ID_CLU_INP}")
+    fun onDiscoverySent() = log("discovery sent with ${if (auxMap) "AUXILIARY (map, keycode NAVIGATION)" else "CLUSTER"} sink ch=${Channel.ID_CLU_VID} and input ch=${Channel.ID_CLU_INP}")
 
     /** Every main-channel picture message, from the read thread. */
     fun onMainVideoData() {

@@ -7,7 +7,7 @@ import com.andrerinas.openheadunit.aap.protocol.proto.Media
 /**
  * Vito fork: the instrument-cluster display announced next to the main screen.
  *
- * One CLUSTER sink (display 1) plus the input service the phone requires for every display
+ * One CLUSTER (or AUXILIARY map, see [services]) sink (display 1) plus the input service the phone requires for every display
  * (its topology check refuses a display without one). Values follow the checklist in the launcher
  * repo, docs/aa-receiver/cluster-gmaps.md section 6, after aa-proxy-rs create_media_sink_service.
  */
@@ -24,13 +24,20 @@ internal object ClusterDisplay {
     /** DPAD up/down/left/right/center, as aa-proxy-rs announces for a cluster. */
     val KEYCODES = listOf(19, 20, 21, 22, 23)
 
-    fun services(enabled: Boolean): List<Control.Service> =
-        if (enabled) listOf(videoSink(), inputSource()) else emptyList()
+    /** KEYCODE_NAVIGATION: on an AUXILIARY display it asks the phone for the map, not a turn card. */
+    const val KEYCODE_NAVIGATION = 65538
+
+    /**
+     * [auxMap] false: a CLUSTER sink, the phone alone picks map or turn card. True: an AUXILIARY
+     * sink with initial_content_keycode NAVIGATION (upstream draft PR #1097's default). All else equal.
+     */
+    fun services(enabled: Boolean, auxMap: Boolean = false): List<Control.Service> =
+        if (enabled) listOf(videoSink(auxMap), inputSource()) else emptyList()
 
     private fun insets(top: Int, bottom: Int, left: Int, right: Int): Media.Insets =
         Media.Insets.newBuilder().setTop(top).setBottom(bottom).setLeft(left).setRight(right).build()
 
-    private fun videoSink(): Control.Service {
+    private fun videoSink(auxMap: Boolean): Control.Service {
         val uiConfig = Media.UiConfig.newBuilder()
             .setMargins(insets(MARGIN_HEIGHT / 2, MARGIN_HEIGHT / 2, MARGIN_WIDTH / 2, MARGIN_WIDTH / 2))
             .setContentInsets(insets(0, 0, 0, 0))
@@ -54,7 +61,14 @@ internal object ClusterDisplay {
             .setAvailableType(Media.MediaCodecType.MEDIA_CODEC_VIDEO_H264_BP)
             .addVideoConfigs(config)
             .setDisplayId(DISPLAY_ID)
-            .setDisplayType(Control.Service.MediaSinkService.DisplayType.DISPLAY_TYPE_CLUSTER)
+            .apply {
+                if (auxMap) {
+                    displayType = Control.Service.MediaSinkService.DisplayType.DISPLAY_TYPE_AUXILIARY
+                    initialContentKeycode = KEYCODE_NAVIGATION
+                } else {
+                    displayType = Control.Service.MediaSinkService.DisplayType.DISPLAY_TYPE_CLUSTER
+                }
+            }
             .build()
         return Control.Service.newBuilder().setId(Channel.ID_CLU_VID).setMediaSinkService(sink).build()
     }
