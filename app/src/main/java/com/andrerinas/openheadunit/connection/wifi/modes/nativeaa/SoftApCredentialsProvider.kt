@@ -358,14 +358,19 @@ class SoftApCredentialsProvider(
     private fun pickApInterface(): ChosenInterface? {
         val candidates = try {
             NetworkInterface.getNetworkInterfaces().toList().map { nif ->
+                val siteLocal = nif.inetAddresses.toList()
+                    .filterIsInstance<Inet4Address>()
+                    .firstOrNull { it.isSiteLocalAddress }
+                    ?.hostAddress
                 ApInterfaceCandidate(
                     name = nif.name,
                     isLoopback = try { nif.isLoopback } catch (e: Exception) { false },
-                    isUp = try { nif.isUp } catch (e: Exception) { false },
-                    siteLocalIpv4 = nif.inetAddresses.toList()
-                        .filterIsInstance<Inet4Address>()
-                        .firstOrNull { it.isSiteLocalAddress }
-                        ?.hostAddress
+                    // Vito fork: on the Unisoc K706 the access point's interface reports "not up" until the first
+                    // station has joined (seen 2026-11-19: hostapd AP-ENABLED and dnsmasq bound at boot, link up
+                    // eight minutes later when a laptop joined). The phone only joins after it got the credentials
+                    // from us, so waiting for "up" never ends. An interface that holds a private address counts.
+                    isUp = (try { nif.isUp } catch (e: Exception) { false }) || siteLocal != null,
+                    siteLocalIpv4 = siteLocal
                 )
             }
         } catch (e: Exception) {
